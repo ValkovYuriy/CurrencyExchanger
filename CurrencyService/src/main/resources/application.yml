@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: CurrencyService
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+  flyway:
+    out-of-order: true
+    baseline-on-migrate: true
+server:
+  port: 8082
