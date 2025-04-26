@@ -20,7 +20,7 @@ public class UserService {
 
     private final UserMapper userMapper;
 
-    public List<UserDto> findAllUsers(){
+    public List<UserDto> findAllUsers() {
         return userRepository
                 .findAll()
                 .stream()
@@ -28,16 +28,18 @@ public class UserService {
                 .toList();
     }
 
-    public UserDto findById(UUID id){
+
+    public UserDto findById(UUID id) {
         return userRepository.findById(id).map(userMapper::toUserDto).orElse(null);
     }
 
-    public UserDto addUser(UserDto userDto){
+
+    public UserDto addUser(UserDto userDto) {
         User user = userMapper.toUser(userDto);
         return userMapper.toUserDto(userRepository.save(user));
     }
 
-    public UserDto updateUser(UUID id, UserDto userDto){
+    public UserDto updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id).orElse(null);
         assert user != null;
         user.setUsername(userDto.username());
@@ -45,9 +47,9 @@ public class UserService {
         return userMapper.toUserDto(userRepository.save(user));
     }
 
-    public void deleteUser(UUID id){
+    public void deleteUser(UUID id) {
         userRepository.deleteById(id);
     }
-
+    
 
 }

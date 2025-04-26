@@ -15,9 +15,9 @@ import lombok.Setter;
 @Builder
 public class ResponseDto<D> {
 
-    @Schema(name = "Сообщение при ответе")
+    @Schema(description = "Сообщение при ответе")
     String message;
 
-    @Schema(name = "Данные ответа")
+    @Schema(description = "Данные ответа")
     D data;
 }

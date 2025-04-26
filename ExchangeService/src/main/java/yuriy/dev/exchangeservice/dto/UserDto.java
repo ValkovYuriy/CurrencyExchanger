@@ -6,14 +6,15 @@ import java.util.List;
 import java.util.UUID;
 
 public record UserDto(
+        @Schema(hidden = true)
         UUID id,
-        @Schema(name = "Имя пользователя")
+        @Schema(description = "Имя пользователя")
         String username,
-        @Schema(name = "Пароль")
+        @Schema(description = "Пароль")
         String password,
-        @Schema(name = "Роли пользователя")
+        @Schema(description = "Роли пользователя")
         List<RoleDto> rolesDto,
-        @Schema(name = "Сделки пользователя")
+        @Schema(description = "Сделки пользователя")
         List<DealDto> dealsDto
 ) {
 }

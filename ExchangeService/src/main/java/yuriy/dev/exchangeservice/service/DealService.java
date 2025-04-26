@@ -11,6 +11,8 @@ import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.model.Deal;
 import yuriy.dev.exchangeservice.repository.DealRepository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -42,10 +44,12 @@ public class DealService {
                 .orElseThrow(() -> new RuntimeException("Валюта с кодом " + dealDto.fromCurrencyCode() + "не найдена"));
         CurrencyDto toCurrency = currencyServiceClient.getCurrencyByCode(dealDto.toCurrencyCode())
                 .orElseThrow(() -> new RuntimeException("Валюта с кодом " + dealDto.toCurrencyCode() + "не найдена"));
-        ExchangeRateDto exchangeRate = currencyServiceClient.getExchangeRate(fromCurrency.getId(),toCurrency.getId())
+        ExchangeRateDto exchangeRate = currencyServiceClient.getExchangeRate(fromCurrency.getId(),toCurrency.getId(), LocalDate.now())
                 .orElseThrow(() -> new RuntimeException(String.format("Курс обмена для валюты %s на %s не найден", fromCurrency.getName(),toCurrency.getName())));
         Deal deal = dealMapper.toDeal(dealDto);
         deal.setExchangeRate(exchangeRate.getRate());
+        deal.setAmountTo(deal.getAmountFrom().multiply(exchangeRate.getRate()));
+        deal.setTimestamp(LocalDateTime.now());
         DealDto savedDeal = dealMapper.toDealDto(dealRepository.save(deal));
         log.info("Сделка с id {} была сохранена", savedDeal.id());
         return savedDeal;

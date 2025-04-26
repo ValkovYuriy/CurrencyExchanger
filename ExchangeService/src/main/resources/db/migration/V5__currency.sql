@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS currency (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    code VARCHAR(10) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL
+);

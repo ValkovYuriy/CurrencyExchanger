@@ -7,20 +7,21 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record DealDto(
+        @Schema(hidden = true)
         UUID id,
-        @Schema(name = "Пользователь, которому принадлежит сделка")
+        @Schema(description = "Пользователь, которому принадлежит сделка")
         UserDto userDto,
-        @Schema(name = "Код базовой валюты")
+        @Schema(description = "Код базовой валюты")
         String fromCurrencyCode,
-        @Schema(name = "Код целевой валюты")
+        @Schema(description = "Код целевой валюты")
         String toCurrencyCode,
-        @Schema(name = "Сумма в исходной валюте")
+        @Schema(description = "Сумма в исходной валюте")
         BigDecimal amountFrom,
-        @Schema(name = "Сумма в целевой валюте")
+        @Schema(description = "Сумма в целевой валюте")
         BigDecimal amountTo,
-        @Schema(name = "Курс обмена")
+        @Schema(description = "Курс обмена")
         BigDecimal exchangeRate,
-        @Schema(name = "Время совершения сделки")
+        @Schema(description = "Время совершения сделки")
         LocalDateTime timestamp
 ) {
 }
