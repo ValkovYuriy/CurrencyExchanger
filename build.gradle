@@ -30,8 +30,8 @@ ext{
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'org.springframework.boot' // Применяем Spring Boot к каждому дочернему модулю
-    apply plugin: 'io.spring.dependency-management' // Применяем управление зависимостями
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
 
     repositories {
         mavenCentral()
@@ -58,7 +58,7 @@ subprojects {
         implementation 'org.springframework.boot:spring-boot-starter-web'
         implementation 'org.flywaydb:flyway-core'
         implementation 'org.flywaydb:flyway-database-postgresql'
-//        implementation 'org.springframework.kafka:spring-kafka'
+        implementation 'org.springframework.kafka:spring-kafka'
         implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
         compileOnly 'org.projectlombok:lombok'
         runtimeOnly 'org.postgresql:postgresql'

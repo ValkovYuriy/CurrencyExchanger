@@ -3,6 +3,7 @@ package yuriy.dev.exchangeservice.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,7 +45,7 @@ public class DealController {
 
     @Operation(summary = "Добавление сделки", security = @SecurityRequirement(name = "JWT"))
     @PostMapping
-    public ResponseEntity<ResponseDto<DealDto>> addDeal(@RequestBody DealDto dto){
+    public ResponseEntity<ResponseDto<DealDto>> addDeal(@Valid @RequestBody DealDto dto){
         DealDto addedDto = dealService.addDeal(dto);
         return ResponseEntity.ok(new ResponseDto<>("OK", addedDto));
     }

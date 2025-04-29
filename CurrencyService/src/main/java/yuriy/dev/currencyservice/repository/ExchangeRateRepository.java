@@ -13,6 +13,11 @@ import java.util.UUID;
 @Repository
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID> {
 
-    @Query("SELECT e from ExchangeRate e where e.baseCurrency.id = :base and e.targetCurrency.id = :target and e.date = :date")
+    @Query("SELECT e from ExchangeRate e" +
+            " where e.baseCurrency.id = :base " +
+            "and e.targetCurrency.id = :target " +
+            "and (e.date = :date or e.date = (select max(e2.date) from ExchangeRate e2 " +
+            "where e2.baseCurrency.id = :base " +
+            "and e2.targetCurrency.id = :target))")
     Optional<ExchangeRate> getExchangeRateForCurrencies(@Param("base") UUID baseCurrencyId, @Param("target") UUID targetCurrencyId, @Param("date") LocalDate date);
 }

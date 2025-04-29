@@ -53,6 +53,7 @@ public class User implements UserDetails {
     )
     private List<Role> roles;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user")
     private List<Deal> deals;
 

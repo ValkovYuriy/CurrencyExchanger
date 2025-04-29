@@ -8,9 +8,10 @@ import yuriy.dev.exchangeservice.model.Deal;
 @Mapper(componentModel = "spring")
 public interface DealMapper {
 
-    @Mapping(target = "user",source = "userDto")
+    @Mapping(target = "user", ignore = true)
     Deal toDeal(DealDto dealDto);
 
-    @Mapping(target = "userDto", source = "user")
+    @Mapping(target = "userId", source = "user.id")
     DealDto toDealDto(Deal deal);
+
 }

@@ -15,4 +15,5 @@ public interface UserMapper {
     @Mapping(target = "dealsDto",source = "deals")
     @Mapping(target = "rolesDto",source = "roles")
     UserDto toUserDto(User user);
+
 }

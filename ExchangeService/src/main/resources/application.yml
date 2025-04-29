@@ -1,3 +1,6 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: ExchangeService
@@ -16,8 +19,14 @@ spring:
   flyway:
     out-of-order: true
     baseline-on-migrate: true
-server:
-  port: 8081
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+    template:
+      default-topic: update-currency-balance
 
 token:
   signing:
