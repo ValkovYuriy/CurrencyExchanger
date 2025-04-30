@@ -1,15 +1,23 @@
 package yuriy.dev.currencyservice.service;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuriy.dev.currencyservice.dto.ExchangeRateDto;
+import yuriy.dev.currencyservice.dto.UpdateExchangeRateDto;
 import yuriy.dev.currencyservice.mapper.ExchangeRateMapper;
+import yuriy.dev.currencyservice.model.Currency;
 import yuriy.dev.currencyservice.model.ExchangeRate;
+import yuriy.dev.currencyservice.repository.CurrencyRepository;
 import yuriy.dev.currencyservice.repository.ExchangeRateRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -20,6 +28,7 @@ public class ExchangeRateService {
     private final ExchangeRateRepository exchangeRateRepository;
 
     private final ExchangeRateMapper exchangeRateMapper;
+    private final CurrencyRepository currencyRepository;
 
     public List<ExchangeRateDto> findAllExchangeRates(){
         return exchangeRateRepository
@@ -40,21 +49,55 @@ public class ExchangeRateService {
                 .orElse(null);
     }
 
+    @Transactional
     public ExchangeRateDto addExchangeRate(ExchangeRateDto exchangeRateDto){
         ExchangeRate exchangeRate = exchangeRateMapper.toExchangeRate(exchangeRateDto);
+        exchangeRate.setDate(LocalDate.now());
+        exchangeRate.setBaseCurrency(currencyRepository.findByCode(exchangeRateDto.baseCurrencyDto().code())
+                .orElseGet(() -> currencyRepository.save(Currency.builder()
+                        .code(exchangeRateDto.baseCurrencyDto().code())
+                        .name(exchangeRateDto.baseCurrencyDto().name())
+                        .build())));
+        exchangeRate.setTargetCurrency(currencyRepository.findByCode(exchangeRateDto.targetCurrencyDto().code())
+                .orElseGet(() -> currencyRepository.save(Currency.builder()
+                        .code(exchangeRateDto.targetCurrencyDto().code())
+                        .name(exchangeRateDto.targetCurrencyDto().name())
+                        .build())));
         return exchangeRateMapper.toExchangeRateDto(exchangeRateRepository.save(exchangeRate));
     }
 
-    public ExchangeRateDto updateExchangeRate(UUID id, ExchangeRateDto exchangeRateDto){
-        ExchangeRate exchangeRate = exchangeRateRepository.findById(id).orElse(null);
-        if(exchangeRate != null){
-            exchangeRate.setBaseCurrency(exchangeRate.getBaseCurrency());
-            exchangeRate.setTargetCurrency(exchangeRate.getTargetCurrency());
-            exchangeRate.setRate(exchangeRateDto.rate());
-            exchangeRate.setDate(exchangeRateDto.date());
-            return exchangeRateMapper.toExchangeRateDto(exchangeRateRepository.save(exchangeRate));
+    @Transactional
+    public ExchangeRateDto updateExchangeRate(UUID id, UpdateExchangeRateDto exchangeRateDto){
+        ExchangeRate exchangeRate = exchangeRateRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException(String.format("Курс обмена с id %s не найден",id)));
+
+        exchangeRate.setRate(exchangeRateDto.rate());
+        exchangeRate.setDate(LocalDate.now());
+        ExchangeRate updatedExchangeRate = exchangeRateRepository.save(exchangeRate);
+        log.info("Был обновлен курс для базовой валюты: {} на целевую {}", updatedExchangeRate.getBaseCurrency().getCode(), updatedExchangeRate.getTargetCurrency().getCode());
+
+        Optional<ExchangeRate> reverseRateOpt = exchangeRateRepository
+                .findByBaseCurrencyAndTargetCurrency(
+                        exchangeRate.getTargetCurrency().getId(),
+                        exchangeRate.getBaseCurrency().getId()
+                );
+
+        if (reverseRateOpt.isPresent()) {
+            ExchangeRate reverseRate = reverseRateOpt.get();
+            reverseRate.setRate(BigDecimal.ONE.divide(exchangeRateDto.rate(), 6, RoundingMode.HALF_UP));
+            reverseRate.setDate(LocalDate.now());
+            exchangeRateRepository.save(reverseRate);
+            log.info("Был обновлен курс для базовой валюты: {} на целевую {}", reverseRate.getBaseCurrency().getCode(), reverseRate.getTargetCurrency().getCode());
+        } else {
+            ExchangeRate newReverseRate = new ExchangeRate();
+            newReverseRate.setBaseCurrency(exchangeRate.getTargetCurrency());
+            newReverseRate.setTargetCurrency(exchangeRate.getBaseCurrency());
+            newReverseRate.setRate(BigDecimal.ONE.divide(exchangeRateDto.rate(), 6, RoundingMode.HALF_UP));
+            newReverseRate.setDate(LocalDate.now());
+            exchangeRateRepository.save(newReverseRate);
+            log.info("Был сохранен курс для базовой валюты: {} на целевую {}", newReverseRate.getBaseCurrency().getCode(), newReverseRate.getTargetCurrency().getCode());
         }
-        return null;
+        return exchangeRateMapper.toExchangeRateDto(updatedExchangeRate);
     }
 
     public void deleteExchangeRate(UUID id){

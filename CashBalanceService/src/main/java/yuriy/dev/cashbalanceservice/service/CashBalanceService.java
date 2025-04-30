@@ -26,7 +26,7 @@ public class CashBalanceService {
             cashBalance.setAmount(cashBalanceDto.amount());
             cashBalance.setDate(LocalDate.now());
             CashBalance savedBalance = cashBalanceRepository.save(cashBalance);
-            log.info("Сохранен баланс: {}", savedBalance);
+            log.info("Обновлен баланс: {}", savedBalance);
         }
     }
 

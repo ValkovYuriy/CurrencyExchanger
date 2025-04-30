@@ -8,8 +8,8 @@ import yuriy.dev.currencyservice.model.ExchangeRate;
 @Mapper(componentModel = "spring",uses = CurrencyMapper.class)
 public interface ExchangeRateMapper {
 
-    @Mapping(target = "baseCurrency",source = "baseCurrencyDto")
-    @Mapping(target = "targetCurrency",source = "targetCurrencyDto")
+    @Mapping(target = "baseCurrency",ignore = true)
+    @Mapping(target = "targetCurrency",ignore = true)
     ExchangeRate toExchangeRate(ExchangeRateDto exchangeRateDto);
 
     @Mapping(target = "baseCurrencyDto",source = "baseCurrency")

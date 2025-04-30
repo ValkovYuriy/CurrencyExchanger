@@ -20,4 +20,7 @@ public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, UUID
             "where e2.baseCurrency.id = :base " +
             "and e2.targetCurrency.id = :target))")
     Optional<ExchangeRate> getExchangeRateForCurrencies(@Param("base") UUID baseCurrencyId, @Param("target") UUID targetCurrencyId, @Param("date") LocalDate date);
+
+    @Query("SELECT er FROM ExchangeRate er where er.baseCurrency.id = :baseCurrencyId and er.targetCurrency.id = :targetCurrencyId")
+    Optional<ExchangeRate> findByBaseCurrencyAndTargetCurrency(UUID baseCurrencyId, UUID targetCurrencyId);
 }

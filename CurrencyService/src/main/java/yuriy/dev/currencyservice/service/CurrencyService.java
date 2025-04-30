@@ -1,5 +1,6 @@
 package yuriy.dev.currencyservice.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,19 +29,17 @@ public class CurrencyService {
                 .toList();
     }
 
-    public CurrencyDto findCurrencyById(UUID id){
-        return currencyRepository.findById(id).map(currencyMapper::toCurrencyDto).orElse(null);
-    }
-
     public CurrencyDto findCurrencyByCode(String code){
-        return currencyRepository.findByCode(code).map(currencyMapper::toCurrencyDto).orElse(null);
+        return currencyRepository.findByCode(code.toUpperCase()).map(currencyMapper::toCurrencyDto).orElse(null);
     }
 
+    @Transactional
     public CurrencyDto addCurrency(CurrencyDto currencyDto){
         Currency currency = currencyMapper.toCurrency(currencyDto);
         return currencyMapper.toCurrencyDto(currencyRepository.save(currency));
     }
 
+    @Transactional
     public CurrencyDto updateCurrency(UUID id, CurrencyDto currencyDto){
         Currency currency = currencyRepository.findById(id).orElse(null);
         if(currency != null){

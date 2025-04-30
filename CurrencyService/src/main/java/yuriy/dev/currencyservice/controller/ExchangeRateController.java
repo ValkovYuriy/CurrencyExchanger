@@ -1,6 +1,8 @@
 package yuriy.dev.currencyservice.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import yuriy.dev.currencyservice.dto.ExchangeRateDto;
+import yuriy.dev.currencyservice.dto.UpdateExchangeRateDto;
 import yuriy.dev.currencyservice.service.ExchangeRateService;
 
 import java.time.LocalDate;
@@ -28,18 +31,20 @@ public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;
 
-    @GetMapping
+    @Operation(summary = "Получение списка всех курсов обмена")
+    @GetMapping("/all")
     public ResponseEntity<List<ExchangeRateDto>> findAllExchangeRates(){
         List<ExchangeRateDto> list = exchangeRateService.findAllExchangeRates();
         return ResponseEntity.ok(list);
     }
-
+    @Operation(summary = "Получение курса обмена по id")
     @GetMapping("/{id}")
     public ResponseEntity<ExchangeRateDto> findExchangeRateById(@PathVariable UUID id){
         ExchangeRateDto dto = exchangeRateService.findExchangeRateById(id);
         return ResponseEntity.ok(dto);
     }
 
+    @Operation(summary = "Получение курса обмена базовой валюты на целевую за определенную дату")
     @GetMapping(params = {"baseCurrencyId","targetCurrencyId","date"})
     public ResponseEntity<ExchangeRateDto> findExchangeRateForCurrencies(@RequestParam UUID baseCurrencyId,
                                                                                       @RequestParam UUID targetCurrencyId,
@@ -47,19 +52,21 @@ public class ExchangeRateController {
         ExchangeRateDto dto = exchangeRateService.findExchangeRateForCurrencies(baseCurrencyId, targetCurrencyId,date);
         return ResponseEntity.ok(dto);
     }
-
+    @Operation(summary = "Добавление курса обмена")
     @PostMapping
-    public ResponseEntity<ExchangeRateDto> addExchangeRate(@RequestBody ExchangeRateDto dto){
+    public ResponseEntity<ExchangeRateDto> addExchangeRate(@RequestBody @Valid ExchangeRateDto dto){
         ExchangeRateDto addedDto = exchangeRateService.addExchangeRate(dto);
         return ResponseEntity.ok(addedDto);
     }
 
+    @Operation(summary = "Обновление курса обмена")
     @PutMapping("/{id}")
-    public ResponseEntity<ExchangeRateDto> updateExchangeRate(@PathVariable UUID id, @RequestBody ExchangeRateDto dto){
+    public ResponseEntity<ExchangeRateDto> updateExchangeRate(@PathVariable UUID id, @Valid @RequestBody UpdateExchangeRateDto dto){
         ExchangeRateDto updatedDto = exchangeRateService.updateExchangeRate(id,dto);
         return ResponseEntity.ok(updatedDto);
     }
 
+    @Operation(summary = "Удаление курса обмена")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteExchangeRate(@PathVariable UUID id){
         exchangeRateService.deleteExchangeRate(id);

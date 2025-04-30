@@ -2,6 +2,7 @@ package yuriy.dev.currencyservice.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -42,14 +43,14 @@ public class CurrencyController {
 
     @Operation(summary = "Добавление валюты")
     @PostMapping
-    public ResponseEntity<CurrencyDto> addCurrency(@RequestBody CurrencyDto dto){
+    public ResponseEntity<CurrencyDto> addCurrency(@RequestBody @Valid CurrencyDto dto){
         CurrencyDto addedDto = currencyService.addCurrency(dto);
         return ResponseEntity.ok(addedDto);
     }
 
     @Operation(summary = "Обновление валюты")
     @PutMapping("/{id}")
-    public ResponseEntity<CurrencyDto> updateCurrency(@PathVariable UUID id, @RequestBody CurrencyDto dto){
+    public ResponseEntity<CurrencyDto> updateCurrency(@PathVariable UUID id, @Valid @RequestBody CurrencyDto dto){
         CurrencyDto updatedDto = currencyService.updateCurrency(id,dto);
         return ResponseEntity.ok(updatedDto);
     }
