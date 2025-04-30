@@ -1,5 +1,6 @@
 package yuriy.dev.exchangeservice.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,13 @@ public class UserService {
         return userRepository.findById(id).map(userMapper::toUserDto).orElse(null);
     }
 
-
+    @Transactional
     public UserDto addUser(UserDto userDto) {
         User user = userMapper.toUser(userDto);
         return userMapper.toUserDto(userRepository.save(user));
     }
 
+    @Transactional
     public UserDto updateUser(UUID id, UserDto userDto) {
         User user = userRepository.findById(id).orElse(null);
         assert user != null;

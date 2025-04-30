@@ -19,14 +19,13 @@ spring:
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
-      group-id: deal-group
-      auto-offset-reset: earliest
+      group-id: balance-update-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring:json.trusted.packages: "yuriy.dev.cashbalanceservice.dto.DealDto"
-        spring.json.use.type.headers: false
-        spring.json.value.default.type: yuriy.dev.cashbalanceservice.dto.DealDto
+        spring.json.trusted.packages: "yuriy.dev.cashbalanceservice.dto"
+        spring.json.type.mapping: dealDto:yuriy.dev.cashbalanceservice.dto.DealDto,exchangeRateDto:yuriy.dev.cashbalanceservice.dto.ExchangeRateDto
+      auto-offset-reset: earliest
 
 server:
   port: 8083

@@ -73,6 +73,7 @@ public class DealService {
         return savedDeal;
     }
 
+    @Transactional
     public DealDto updateDeal(UUID id, DealDto dealDto){
         Deal deal = dealRepository.findById(id).orElse(null);
         assert deal != null;

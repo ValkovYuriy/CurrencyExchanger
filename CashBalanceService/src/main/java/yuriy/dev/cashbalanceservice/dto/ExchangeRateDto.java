@@ -1,15 +1,15 @@
 package yuriy.dev.cashbalanceservice.dto;
 
-import lombok.Builder;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Builder
-public record DailyReportDto(
+public record ExchangeRateDto(
         UUID id,
-        BigDecimal totalInBaseCurrency,
+        String baseCurrencyCode,
+        String targetCurrencyCode,
+        BigDecimal oldRate,
+        BigDecimal newRate,
         LocalDate date
 ) {
 }

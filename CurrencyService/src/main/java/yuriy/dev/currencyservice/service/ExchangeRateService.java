@@ -3,9 +3,12 @@ package yuriy.dev.currencyservice.service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import yuriy.dev.currencyservice.dto.ExchangeRateDto;
+import yuriy.dev.currencyservice.dto.ExchangeRateForKafka;
 import yuriy.dev.currencyservice.dto.UpdateExchangeRateDto;
 import yuriy.dev.currencyservice.mapper.ExchangeRateMapper;
 import yuriy.dev.currencyservice.model.Currency;
@@ -26,6 +29,7 @@ import java.util.UUID;
 public class ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
+    private final KafkaTemplate<String, ExchangeRateForKafka> kafkaTemplate;
 
     private final ExchangeRateMapper exchangeRateMapper;
     private final CurrencyRepository currencyRepository;
@@ -67,15 +71,25 @@ public class ExchangeRateService {
     }
 
     @Transactional
+    @SneakyThrows
     public ExchangeRateDto updateExchangeRate(UUID id, UpdateExchangeRateDto exchangeRateDto){
         ExchangeRate exchangeRate = exchangeRateRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException(String.format("Курс обмена с id %s не найден",id)));
-
+        BigDecimal oldRate = exchangeRate.getRate();
         exchangeRate.setRate(exchangeRateDto.rate());
         exchangeRate.setDate(LocalDate.now());
         ExchangeRate updatedExchangeRate = exchangeRateRepository.save(exchangeRate);
         log.info("Был обновлен курс для базовой валюты: {} на целевую {}", updatedExchangeRate.getBaseCurrency().getCode(), updatedExchangeRate.getTargetCurrency().getCode());
-
+        ExchangeRateForKafka exchangeRateForKafka = ExchangeRateForKafka.builder()
+                .id(updatedExchangeRate.getId())
+                .baseCurrencyCode(updatedExchangeRate.getBaseCurrency().getCode())
+                .targetCurrencyCode(updatedExchangeRate.getTargetCurrency().getCode())
+                .oldRate(oldRate)
+                .newRate(updatedExchangeRate.getRate())
+                .date(updatedExchangeRate.getDate())
+                .build();
+        kafkaTemplate.sendDefault(exchangeRateForKafka).get();
+        log.info("Было отправлено сообщение в kafka с измененным курсом обмена");
         Optional<ExchangeRate> reverseRateOpt = exchangeRateRepository
                 .findByBaseCurrencyAndTargetCurrency(
                         exchangeRate.getTargetCurrency().getId(),

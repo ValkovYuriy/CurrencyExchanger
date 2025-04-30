@@ -16,5 +16,15 @@ spring:
   flyway:
     out-of-order: true
     baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        spring.json.type.mapping: exchangeRateDto:yuriy.dev.currencyservice.dto.ExchangeRateForKafka
+    template:
+      default-topic: update-total-balance
 server:
   port: 8082
