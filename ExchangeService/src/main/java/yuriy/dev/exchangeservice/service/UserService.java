@@ -3,7 +3,10 @@ package yuriy.dev.exchangeservice.service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import yuriy.dev.exchangeservice.dto.RequestDto;
 import yuriy.dev.exchangeservice.dto.UserDto;
 import yuriy.dev.exchangeservice.mapper.UserMapper;
 import yuriy.dev.exchangeservice.model.User;
@@ -21,9 +24,10 @@ public class UserService {
 
     private final UserMapper userMapper;
 
-    public List<UserDto> findAllUsers() {
+    public List<UserDto> findAllUsers(RequestDto requestDto) {
+        Pageable pageable = PageRequest.of(requestDto.getFrom(), requestDto.getSize());
         return userRepository
-                .findAll()
+                .findAll(pageable)
                 .stream()
                 .map(userMapper::toUserDto)
                 .toList();
