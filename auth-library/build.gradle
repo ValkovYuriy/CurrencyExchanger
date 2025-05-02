@@ -1,0 +1,39 @@
+plugins {
+    id 'java-library'
+}
+
+group = 'yuriy.dev'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+ext{
+    jwtVersion = '0.12.6'
+}
+
+tasks.named('bootJar') {
+    enabled = false
+}
+
+tasks.named('javadoc'){
+    enabled = false
+}
+
+tasks.named('jar') {
+    enabled = true
+}
+
+dependencies {
+    implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}

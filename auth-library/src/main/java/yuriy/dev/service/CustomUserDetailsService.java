@@ -1,11 +1,11 @@
-package yuriy.dev.exchangeservice.service;
+package yuriy.dev.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import yuriy.dev.exchangeservice.repository.UserRepository;
+import yuriy.dev.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +16,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + username + "не найден"));
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + username + " не найден"));
     }
 }

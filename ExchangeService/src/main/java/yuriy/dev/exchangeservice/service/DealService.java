@@ -15,9 +15,9 @@ import yuriy.dev.exchangeservice.dto.ExchangeRateDto;
 import yuriy.dev.exchangeservice.dto.RequestDto;
 import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.model.Deal;
-import yuriy.dev.exchangeservice.model.User;
 import yuriy.dev.exchangeservice.repository.DealRepository;
-import yuriy.dev.exchangeservice.util.SecurityUtils;
+import yuriy.dev.model.User;
+import yuriy.dev.util.SecurityUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

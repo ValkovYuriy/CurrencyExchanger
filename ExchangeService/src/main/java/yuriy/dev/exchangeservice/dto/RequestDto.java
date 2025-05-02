@@ -16,10 +16,12 @@ import lombok.Setter;
 @Builder
 public class RequestDto {
 
+    @Builder.Default
     @Schema(description = "Индекс начала выборки", example = "0")
     @PositiveOrZero
     private int from = 0;
 
+    @Builder.Default
     @Schema(description = "Количество элементов в выборке",example = "10")
     @Positive
     private int size = 10;

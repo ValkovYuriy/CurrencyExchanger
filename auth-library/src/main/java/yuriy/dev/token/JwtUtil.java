@@ -1,4 +1,4 @@
-package yuriy.dev.exchangeservice.token;
+package yuriy.dev.token;
 
 
 import io.jsonwebtoken.Claims;
@@ -8,7 +8,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import yuriy.dev.exchangeservice.model.User;
+import yuriy.dev.model.Role;
+import yuriy.dev.model.User;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
@@ -44,7 +45,7 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         User user = (User) userDetails;
         claims.put("id", user.getId());
-        claims.put("roles", user.getRoles());
+        claims.put("roles", user.getRoles().stream().map(Role::getRole).toList());
         return generateToken(claims, userDetails);
     }
 

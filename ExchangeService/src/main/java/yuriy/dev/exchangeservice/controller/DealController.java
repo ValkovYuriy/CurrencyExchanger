@@ -34,6 +34,7 @@ public class DealController {
 
     private final DealService dealService;
 
+
     @Operation(summary = "Получение списка сделок", security = @SecurityRequirement(name = "JWT"))
     @GetMapping
     public ResponseEntity<ResponseDto<List<DealDto>>> findAllDeals(@Valid @ModelAttribute RequestDto requestDto){
@@ -50,7 +51,7 @@ public class DealController {
         return ResponseEntity.ok(new ResponseDto<>("OK", list));
     }
 
-    @Operation(summary = "Поиск сделка по id", security = @SecurityRequirement(name = "JWT"))
+    @Operation(summary = "Поиск сделки по id", security = @SecurityRequirement(name = "JWT"))
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto<DealDto>> findDealById(@PathVariable UUID id){
         DealDto dto = dealService.findDealById(id);

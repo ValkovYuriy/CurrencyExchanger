@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS "user"(
+CREATE TABLE IF NOT EXISTS "dealUser"(
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     username VARCHAR(30) UNIQUE NOT NULL ,
     password CHAR(60) NOT NULL
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS role(
 );
 CREATE TABLE IF NOT EXISTS deal(
    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES "user"(id),
+    user_id UUID NOT NULL REFERENCES "dealUser"(id),
     from_currency_id UUID NOT NULL REFERENCES currency(id),
     to_currency_id UUID NOT NULL REFERENCES currency(id),
     amount_from DECIMAL(15, 2) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS deal(
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS user_roles(
-    user_id UUID REFERENCES "user"(id),
+    user_id UUID REFERENCES "dealUser"(id),
     role_id UUID REFERENCES role(id),
     PRIMARY KEY (user_id,role_id)
 );

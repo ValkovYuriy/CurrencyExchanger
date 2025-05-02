@@ -1,2 +1,4 @@
 rootProject.name = 'CurrencyExchanger'
 include('CurrencyService','ExchangeService','CashBalanceService')
+include 'auth-library'
+

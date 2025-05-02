@@ -1,4 +1,4 @@
-package yuriy.dev.exchangeservice.controller;
+package yuriy.dev.controller;
 
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import yuriy.dev.exchangeservice.dto.JwtAuthenticationResponse;
-import yuriy.dev.exchangeservice.dto.SignInRequest;
-import yuriy.dev.exchangeservice.dto.SignUpRequest;
-import yuriy.dev.exchangeservice.service.AuthenticationService;
+import yuriy.dev.dto.JwtAuthenticationResponse;
+import yuriy.dev.dto.SignInRequest;
+import yuriy.dev.dto.SignUpRequest;
+import yuriy.dev.service.AuthenticationService;
 
 @RestController
 @RequestMapping("/auth")

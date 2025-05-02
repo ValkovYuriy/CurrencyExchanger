@@ -22,9 +22,7 @@ ext{
 }
 
 dependencies {
-	implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
-	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
-	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+	implementation project(':auth-library')
 	implementation 'org.springframework.boot:spring-boot-starter'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

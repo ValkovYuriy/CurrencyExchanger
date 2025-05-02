@@ -14,6 +14,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import yuriy.dev.model.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

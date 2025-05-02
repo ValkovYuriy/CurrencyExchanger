@@ -1,4 +1,4 @@
-package yuriy.dev.exchangeservice.token;
+package yuriy.dev.token;
 
 
 import jakarta.servlet.FilterChain;
@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import yuriy.dev.exchangeservice.service.CustomUserDetailsService;
+import yuriy.dev.service.CustomUserDetailsService;
 
 import java.io.IOException;
 

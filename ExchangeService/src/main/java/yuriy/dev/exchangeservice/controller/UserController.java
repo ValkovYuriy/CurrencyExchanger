@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,6 +31,7 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Получение списка пользователей", security = @SecurityRequirement(name = "JWT"))
     @GetMapping
     public ResponseEntity<ResponseDto<List<UserDto>>> findAllUsers(@Valid @ModelAttribute RequestDto requestDto){
@@ -44,6 +46,7 @@ public class UserController {
         return ResponseEntity.ok(new ResponseDto<>("OK", dto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Добавление нового пользователя", security = @SecurityRequirement(name = "JWT"))
     @PostMapping
     public ResponseEntity<ResponseDto<UserDto>> addUser(@RequestBody UserDto dto){
@@ -51,6 +54,7 @@ public class UserController {
         return ResponseEntity.ok(new ResponseDto<>("OK", addedDto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Обновление пользователя", security = @SecurityRequirement(name = "JWT"))
     @PutMapping("/{id}")
     public ResponseEntity<ResponseDto<UserDto>> updateUser(@PathVariable UUID id, @RequestBody UserDto dto){
@@ -58,12 +62,12 @@ public class UserController {
         return ResponseEntity.ok(new ResponseDto<>("OK", updatedDto));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Удаление пользователя", security = @SecurityRequirement(name = "JWT"))
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable UUID id){
         userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }
-
 
 }

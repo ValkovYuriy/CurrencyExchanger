@@ -1,11 +1,12 @@
-package yuriy.dev.exchangeservice.util;
+package yuriy.dev.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-import yuriy.dev.exchangeservice.model.User;
-import yuriy.dev.exchangeservice.repository.UserRepository;
+import yuriy.dev.model.User;
+import yuriy.dev.repository.UserRepository;
+
 
 @Component
 @RequiredArgsConstructor

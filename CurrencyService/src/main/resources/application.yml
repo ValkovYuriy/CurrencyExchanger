@@ -26,5 +26,11 @@ spring:
         spring.json.type.mapping: exchangeRateDto:yuriy.dev.currencyservice.dto.ExchangeRateForKafka
     template:
       default-topic: update-total-balance
+
+token:
+  signing:
+    key: ${KEY}
 server:
   port: 8082
+
+

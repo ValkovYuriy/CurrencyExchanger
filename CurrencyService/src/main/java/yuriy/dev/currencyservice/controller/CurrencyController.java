@@ -1,6 +1,7 @@
 package yuriy.dev.currencyservice.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,35 +28,35 @@ public class CurrencyController {
 
     private final CurrencyService currencyService;
 
-    @Operation(summary = "Получение списка всех валют")
+    @Operation(summary = "Получение списка всех валют",security = @SecurityRequirement(name = "JWT"))
     @GetMapping
     public ResponseEntity<List<CurrencyDto>> findAllCurrencies(){
         List<CurrencyDto> list = currencyService.findAllCurrencies();
         return ResponseEntity.ok(list);
     }
 
-    @Operation(summary = "Поиск валюты по коду")
+    @Operation(summary = "Поиск валюты по коду",security = @SecurityRequirement(name = "JWT"))
     @GetMapping("/{code}")
     public ResponseEntity<CurrencyDto> findCurrencyByCode(@PathVariable String code){
         CurrencyDto dto = currencyService.findCurrencyByCode(code);
         return ResponseEntity.ok(dto);
     }
 
-    @Operation(summary = "Добавление валюты")
+    @Operation(summary = "Добавление валюты",security = @SecurityRequirement(name = "JWT"))
     @PostMapping
     public ResponseEntity<CurrencyDto> addCurrency(@RequestBody @Valid CurrencyDto dto){
         CurrencyDto addedDto = currencyService.addCurrency(dto);
         return ResponseEntity.ok(addedDto);
     }
 
-    @Operation(summary = "Обновление валюты")
+    @Operation(summary = "Обновление валюты",security = @SecurityRequirement(name = "JWT"))
     @PutMapping("/{id}")
     public ResponseEntity<CurrencyDto> updateCurrency(@PathVariable UUID id, @Valid @RequestBody CurrencyDto dto){
         CurrencyDto updatedDto = currencyService.updateCurrency(id,dto);
         return ResponseEntity.ok(updatedDto);
     }
 
-    @Operation(summary = "Удаление валюты")
+    @Operation(summary = "Удаление валюты",security = @SecurityRequirement(name = "JWT"))
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCurrency(@PathVariable UUID id){
         currencyService.deleteCurrency(id);
