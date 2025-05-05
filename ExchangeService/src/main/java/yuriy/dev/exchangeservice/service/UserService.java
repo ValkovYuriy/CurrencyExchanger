@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import yuriy.dev.dto.RoleDto;
 import yuriy.dev.exchangeservice.dto.RequestDto;
 import yuriy.dev.exchangeservice.dto.UserDto;
+import yuriy.dev.exchangeservice.exception.NotFoundException;
 import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.mapper.RoleMapper;
 import yuriy.dev.exchangeservice.mapper.UserMapper;
@@ -58,7 +59,7 @@ public class UserService {
 
 
     public UserDto findById(UUID id) {
-        User user = userRepository.findById(id).orElseThrow(()-> new RuntimeException("Пользователь не найден"));
+        User user = userRepository.findById(id).orElseThrow(()-> new NotFoundException("Пользователь не найден"));
         return UserDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -78,7 +79,7 @@ public class UserService {
 
     @Transactional
     public UserDto updateUser(UUID id, UserDto userDto) {
-        User user = userRepository.findById(id).orElseThrow(()-> new RuntimeException("Пользователь не найден"));
+        User user = userRepository.findById(id).orElseThrow(()-> new NotFoundException("Пользователь не найден"));
         user.setUsername(userDto.username());
         user.setPassword(passwordEncoder.encode(userDto.password()));
         user.setRoles(roleRepository.findByRoles(userDto.rolesDto().stream().map(RoleDto::role).toList()));

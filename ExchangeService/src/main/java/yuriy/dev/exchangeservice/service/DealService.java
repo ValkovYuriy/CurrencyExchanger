@@ -13,6 +13,8 @@ import yuriy.dev.exchangeservice.dto.CurrencyDto;
 import yuriy.dev.exchangeservice.dto.DealDto;
 import yuriy.dev.exchangeservice.dto.ExchangeRateDto;
 import yuriy.dev.exchangeservice.dto.RequestDto;
+import yuriy.dev.exchangeservice.exception.AuthenticationMismatchException;
+import yuriy.dev.exchangeservice.exception.NotFoundException;
 import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.model.Deal;
 import yuriy.dev.exchangeservice.repository.DealRepository;
@@ -62,16 +64,16 @@ public class DealService {
     @SneakyThrows
     public DealDto addDeal(DealDto dealDto) {
         CurrencyDto fromCurrency = currencyServiceClient.getCurrencyByCode(dealDto.fromCurrencyCode().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Валюта с кодом " + dealDto.fromCurrencyCode().toUpperCase() + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Валюта с кодом " + dealDto.fromCurrencyCode().toUpperCase() + " не найдена"));
         CurrencyDto toCurrency = currencyServiceClient.getCurrencyByCode(dealDto.toCurrencyCode().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Валюта с кодом " + dealDto.toCurrencyCode().toUpperCase() + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Валюта с кодом " + dealDto.toCurrencyCode().toUpperCase() + " не найдена"));
         ExchangeRateDto exchangeRate = currencyServiceClient.getExchangeRate(fromCurrency.getId(),toCurrency.getId(), LocalDate.now())
-                .orElseThrow(() -> new RuntimeException(String.format("Курс обмена для валюты %s на %s не найден", fromCurrency.getName(),toCurrency.getName())));
+                .orElseThrow(() -> new NotFoundException(String.format("Курс обмена для валюты %s на %s не найден", fromCurrency.getName(),toCurrency.getName())));
 
         Deal deal = dealMapper.toDeal(dealDto);
         User currentUser = securityUtils.getCurrentUser();
         if(!currentUser.getId().equals(dealDto.userId())){
-            throw new RuntimeException("Id аутентифицированного пользователя не совпадает с указанным");
+            throw new AuthenticationMismatchException("Id аутентифицированного пользователя не совпадает с указанным");
         }
         deal.setUser(currentUser);
         deal.setAmountTo(dealDto.amountFrom().multiply(exchangeRate.getRate()));
@@ -86,8 +88,7 @@ public class DealService {
 
     @Transactional
     public DealDto updateDeal(UUID id, DealDto dealDto){
-        Deal deal = dealRepository.findById(id).orElse(null);
-        assert deal != null;
+        Deal deal = dealRepository.findById(id).orElseThrow(()-> new NotFoundException("Сделка не найдена"));
         deal.setTimestamp(dealDto.timestamp());
         deal.setAmountFrom(dealDto.amountFrom());
         deal.setAmountTo(dealDto.amountTo());

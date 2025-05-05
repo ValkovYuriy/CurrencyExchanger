@@ -7,6 +7,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import yuriy.dev.exchangeservice.dto.ResponseDto;
+import yuriy.dev.exchangeservice.exception.AuthenticationMismatchException;
+import yuriy.dev.exchangeservice.exception.NotFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +16,18 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class ErrorHandler {
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ResponseDto<Object>> handleNotFoundException(NotFoundException e) {
+        log.error(e.getMessage());
+        return ResponseEntity.ok(new ResponseDto<>(e.getMessage(), null));
+    }
+
+    @ExceptionHandler(AuthenticationMismatchException.class)
+    public ResponseEntity<ResponseDto<Object>> handleAuthenticationMismatchException(AuthenticationMismatchException e) {
+        log.error(e.getMessage());
+        return ResponseEntity.ok(new ResponseDto<>(e.getMessage(), null));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ResponseDto<Map<String, String>>> handleValidationExceptions(MethodArgumentNotValidException ex) {
