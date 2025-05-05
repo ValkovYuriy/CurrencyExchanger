@@ -42,7 +42,7 @@ public class UserController {
     @Operation(summary = "Получение пользователя по id", security = @SecurityRequirement(name = "JWT"))
     @GetMapping("/{id}")
     public ResponseEntity<ResponseDto<UserDto>> findUserById(@PathVariable UUID id){
-        UserDto dto = userService.findById(id);
+        UserDto dto = userService.findUserById(id);
         return ResponseEntity.ok(new ResponseDto<>("OK", dto));
     }
 

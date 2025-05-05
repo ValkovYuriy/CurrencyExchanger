@@ -8,12 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import yuriy.dev.exchangeservice.dto.CurrencyDto;
 import yuriy.dev.exchangeservice.dto.DealDto;
 import yuriy.dev.exchangeservice.dto.ExchangeRateDto;
 import yuriy.dev.exchangeservice.dto.RequestDto;
-import yuriy.dev.exchangeservice.exception.AuthenticationMismatchException;
 import yuriy.dev.exchangeservice.exception.NotFoundException;
 import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.model.Deal;
@@ -32,6 +32,7 @@ import java.util.UUID;
 public class DealService {
 
     private final CurrencyServiceClient currencyServiceClient;
+
     private final SecurityUtils securityUtils;
 
     private final KafkaTemplate<String, DealDto> kafkaTemplate;
@@ -40,24 +41,44 @@ public class DealService {
 
     private final DealMapper dealMapper;
 
+
     public List<DealDto> findAllDeals(RequestDto requestDto){
         Pageable pageable = PageRequest.of(requestDto.getFrom(), requestDto.getSize());
-        return dealRepository
+        User currentUser = securityUtils.getCurrentUser();
+        return currentUser.getRoles().stream().anyMatch(role -> role.getRole().equals("ROLE_ADMIN"))
+                ? dealRepository
                 .findAll(pageable)
+                .stream()
+                .map(dealMapper::toDealDto)
+                .toList()
+                : dealRepository
+                .findAllByUserId(currentUser.getId())
                 .stream()
                 .map(dealMapper::toDealDto)
                 .toList();
     }
 
     public List<DealDto> findDealsBetweenDates(RequestDto requestDto, LocalDate fromDate, LocalDate toDate) {
-        return dealRepository.findDealsBetween(requestDto.getFrom(),requestDto.getSize(),fromDate,toDate)
+        User currentUser = securityUtils.getCurrentUser();
+        return currentUser.getRoles().stream().anyMatch(role -> role.getRole().equals("ROLE_ADMIN"))
+                ? dealRepository.findDealsBetween(requestDto.getFrom(),requestDto.getSize(),fromDate,toDate)
                 .stream()
+                .map(dealMapper::toDealDto)
+                .toList()
+                : dealRepository.findDealsBetween(requestDto.getFrom(),requestDto.getSize(),fromDate,toDate)
+                .stream()
+                .filter(deal -> deal.getUser().getId().equals(currentUser.getId()))
                 .map(dealMapper::toDealDto)
                 .toList();
     }
 
     public DealDto findDealById(UUID id){
-        return dealRepository.findById(id).map(dealMapper::toDealDto).orElse(null);
+        DealDto dealDto = dealRepository.findById(id).map(dealMapper::toDealDto).orElseThrow(() -> new NotFoundException("Сделка не найдена"));
+        User currentUser = securityUtils.getCurrentUser();
+        if(!dealDto.userId().equals(currentUser.getId()) && currentUser.getRoles().stream().noneMatch(role -> role.getRole().equals("ROLE_ADMIN"))){
+            throw new AccessDeniedException("Доступ запрещен");
+        }
+        return dealDto;
     }
 
     @Transactional
@@ -72,9 +93,6 @@ public class DealService {
 
         Deal deal = dealMapper.toDeal(dealDto);
         User currentUser = securityUtils.getCurrentUser();
-        if(!currentUser.getId().equals(dealDto.userId())){
-            throw new AuthenticationMismatchException("Id аутентифицированного пользователя не совпадает с указанным");
-        }
         deal.setUser(currentUser);
         deal.setAmountTo(dealDto.amountFrom().multiply(exchangeRate.getRate()));
         deal.setExchangeRate(exchangeRate.getRate());

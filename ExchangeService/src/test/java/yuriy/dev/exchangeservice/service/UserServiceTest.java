@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import yuriy.dev.dto.RoleDto;
 import yuriy.dev.exchangeservice.dto.DealDto;
@@ -26,6 +27,7 @@ import yuriy.dev.model.Role;
 import yuriy.dev.model.User;
 import yuriy.dev.repository.RoleRepository;
 import yuriy.dev.repository.UserRepository;
+import yuriy.dev.util.SecurityUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,6 +56,8 @@ public class UserServiceTest {
     private DealMapper dealMapper;
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private SecurityUtils securityUtils;
 
     @InjectMocks
     private UserService userService;
@@ -130,8 +134,9 @@ public class UserServiceTest {
             when(dealRepository.findAllByUserId(userId)).thenReturn(userDeals);
             when(roleMapper.toDto(any())).thenReturn(new RoleDto(UUID.randomUUID(), "ROLE_USER"));
             when(dealMapper.toDealDto(any())).thenReturn(DealDto.builder().build());
+            when(securityUtils.getCurrentUser()).thenReturn(testUser);
 
-            UserDto result = userService.findById(userId);
+            UserDto result = userService.findUserById(userId);
 
             assertThat(result).isNotNull();
             assertThat(result.username()).isEqualTo("testUser");
@@ -142,11 +147,29 @@ public class UserServiceTest {
         }
 
         @Test
-        void findById_NonExistingUser_ThrowsException() {
+        void findById_NonExistingUser_ThrowsNotFoundException() {
             when(userRepository.findById(any())).thenReturn(Optional.empty());
 
             assertThrows(NotFoundException.class,
-                    () -> userService.findById(UUID.randomUUID()));
+                    () -> userService.findUserById(UUID.randomUUID()));
+        }
+
+
+        @Test
+        void findById_ExistingUser_ThrowsAccessDeniedException() {
+            UUID someUserId = UUID.randomUUID();
+            User mockUser = new User();
+            mockUser.setId(UUID.randomUUID());
+
+            when(userRepository.findById(someUserId)).thenReturn(Optional.of(mockUser));
+            when(securityUtils.getCurrentUser()).thenReturn(testUser);
+
+
+            testUser.setId(UUID.randomUUID());
+            testUser.setRoles(List.of(new Role(UUID.randomUUID(),"ROLE_USER")));
+
+            assertThrows(AccessDeniedException.class,
+                    () -> userService.findUserById(someUserId));
         }
     }
 

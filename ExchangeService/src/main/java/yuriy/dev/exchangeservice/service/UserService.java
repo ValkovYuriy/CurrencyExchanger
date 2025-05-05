@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import yuriy.dev.dto.RoleDto;
@@ -19,6 +20,7 @@ import yuriy.dev.exchangeservice.repository.DealRepository;
 import yuriy.dev.model.User;
 import yuriy.dev.repository.RoleRepository;
 import yuriy.dev.repository.UserRepository;
+import yuriy.dev.util.SecurityUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -38,6 +40,7 @@ public class UserService {
     private final DealMapper dealMapper;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SecurityUtils securityUtils;
 
     public List<UserDto> findAllUsers(RequestDto requestDto) {
         Pageable pageable = PageRequest.of(requestDto.getFrom(), requestDto.getSize());
@@ -58,8 +61,12 @@ public class UserService {
     }
 
 
-    public UserDto findById(UUID id) {
+    public UserDto findUserById(UUID id) {
         User user = userRepository.findById(id).orElseThrow(()-> new NotFoundException("Пользователь не найден"));
+        User currentUser = securityUtils.getCurrentUser();
+        if (!id.equals(currentUser.getId()) && currentUser.getRoles().stream().noneMatch(role -> role.getRole().equals("ROLE_ADMIN"))) {
+           throw new AccessDeniedException("Доступ запрещен");
+        }
         return UserDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())

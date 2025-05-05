@@ -14,15 +14,16 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.security.access.AccessDeniedException;
 import yuriy.dev.exchangeservice.dto.CurrencyDto;
 import yuriy.dev.exchangeservice.dto.DealDto;
 import yuriy.dev.exchangeservice.dto.ExchangeRateDto;
 import yuriy.dev.exchangeservice.dto.RequestDto;
-import yuriy.dev.exchangeservice.exception.AuthenticationMismatchException;
 import yuriy.dev.exchangeservice.exception.NotFoundException;
 import yuriy.dev.exchangeservice.mapper.DealMapper;
 import yuriy.dev.exchangeservice.model.Deal;
 import yuriy.dev.exchangeservice.repository.DealRepository;
+import yuriy.dev.model.Role;
 import yuriy.dev.model.User;
 import yuriy.dev.util.SecurityUtils;
 
@@ -64,14 +65,31 @@ public class DealServiceTest {
 
     @Nested
     class findAllDeals {
-
-        private List<Deal> deals;
+        private List<Deal> allDeals;
+        private User regularUser;
+        private User adminUser;
+        private UUID userId;
+        private UUID adminId;
 
         @BeforeEach
         void setUp() {
-            deals = List.of(
+            userId = UUID.randomUUID();
+            adminId = UUID.randomUUID();
+
+            regularUser = User.builder()
+                    .id(userId)
+                    .roles(List.of(Role.builder().role("ROLE_USER").build()))
+                    .build();
+
+            adminUser = User.builder()
+                    .id(adminId)
+                    .roles(List.of(Role.builder().role("ROLE_ADMIN").build()))
+                    .build();
+
+            allDeals = List.of(
                     Deal.builder()
                             .id(UUID.randomUUID())
+                            .user(User.builder().id(userId).build())
                             .fromCurrencyCode("USD")
                             .toCurrencyCode("EUR")
                             .amountFrom(BigDecimal.valueOf(100))
@@ -81,6 +99,7 @@ public class DealServiceTest {
                             .build(),
                     Deal.builder()
                             .id(UUID.randomUUID())
+                            .user(User.builder().id(adminId).build())
                             .fromCurrencyCode("EUR")
                             .toCurrencyCode("RUB")
                             .amountFrom(BigDecimal.valueOf(100))
@@ -92,75 +111,70 @@ public class DealServiceTest {
         }
 
         @Test
-        void findAllDeals_withDefaultRequestDto_Success() {
+        void findAllDeals_AdminUser_ReturnsAllDeals() {
             RequestDto request = new RequestDto();
             Pageable pageable = PageRequest.of(request.getFrom(), request.getSize());
+            Page<Deal> page = new PageImpl<>(allDeals);
 
-            Page<Deal> page = new PageImpl<>(deals);
-
+            when(securityUtils.getCurrentUser()).thenReturn(adminUser);
             when(dealRepository.findAll(pageable)).thenReturn(page);
-            when(dealMapper.toDealDto(any(Deal.class)))
-                    .thenAnswer(inv -> {
-                        Deal d = inv.getArgument(0);
-                        return DealDto.builder()
-                                .id(d.getId())
-                                .fromCurrencyCode(d.getFromCurrencyCode())
-                                .toCurrencyCode(d.getToCurrencyCode())
-                                .amountFrom(d.getAmountFrom())
-                                .amountTo(d.getAmountTo())
-                                .exchangeRate(d.getExchangeRate())
-                                .timestamp(d.getTimestamp())
-                                .build();
-                    });
+            when(dealMapper.toDealDto(any(Deal.class))).thenAnswer(inv -> {
+                Deal d = inv.getArgument(0);
+                return DealDto.builder()
+                        .id(d.getId())
+                        .fromCurrencyCode(d.getFromCurrencyCode())
+                        .toCurrencyCode(d.getToCurrencyCode())
+                        .amountFrom(d.getAmountFrom())
+                        .amountTo(d.getAmountTo())
+                        .exchangeRate(d.getExchangeRate())
+                        .timestamp(d.getTimestamp())
+                        .build();
+            });
 
             List<DealDto> result = dealService.findAllDeals(request);
 
             assertThat(result).hasSize(2);
-            assertThat(result.get(0).id()).isNotNull();
-            assertThat(result.get(1).id()).isNotNull();
-
             verify(dealRepository).findAll(pageable);
-            verify(dealMapper, times(2)).toDealDto(any());
+            verify(dealRepository, never()).findAllByUserId(any());
         }
 
         @Test
-        void findAllDeals_withCustomRequestDto_Success() {
-            RequestDto request = new RequestDto(1, 2);
-            Pageable pageable = PageRequest.of(request.getFrom(), request.getSize());
+        void findAllDeals_RegularUser_ReturnsOnlyOwnDeals() {
+            RequestDto request = new RequestDto();
+            List<Deal> userDeals = allDeals.stream()
+                    .filter(d -> d.getUser().getId().equals(userId))
+                    .toList();
 
-            Page<Deal> page = new PageImpl<>(List.of(deals.get(1)));
-
-            when(dealRepository.findAll(pageable)).thenReturn(page);
-            when(dealMapper.toDealDto(any(Deal.class)))
-                    .thenAnswer(inv -> {
-                        Deal d = inv.getArgument(0);
-                        return DealDto.builder()
-                                .id(d.getId())
-                                .fromCurrencyCode(d.getFromCurrencyCode())
-                                .toCurrencyCode(d.getToCurrencyCode())
-                                .amountFrom(d.getAmountFrom())
-                                .amountTo(d.getAmountTo())
-                                .exchangeRate(d.getExchangeRate())
-                                .timestamp(d.getTimestamp())
-                                .build();
-                    });
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
+            when(dealRepository.findAllByUserId(userId)).thenReturn(userDeals);
+            when(dealMapper.toDealDto(any(Deal.class))).thenAnswer(inv -> {
+                Deal d = inv.getArgument(0);
+                return DealDto.builder()
+                        .id(d.getId())
+                        .fromCurrencyCode(d.getFromCurrencyCode())
+                        .toCurrencyCode(d.getToCurrencyCode())
+                        .amountFrom(d.getAmountFrom())
+                        .amountTo(d.getAmountTo())
+                        .exchangeRate(d.getExchangeRate())
+                        .timestamp(d.getTimestamp())
+                        .build();
+            });
 
             List<DealDto> result = dealService.findAllDeals(request);
 
             assertThat(result).hasSize(1);
-            assertThat(result.getFirst().id()).isNotNull();
-
-            verify(dealRepository).findAll(pageable);
-            verify(dealMapper, times(1)).toDealDto(any());
+            assertThat(result.getFirst().fromCurrencyCode()).isEqualTo("USD");
+            verify(dealRepository).findAllByUserId(userId);
+            verify(dealRepository, never()).findAll();
         }
 
         @Test
         void findAllDeals_EmptyResult_ShouldReturnEmptyList() {
             RequestDto request = new RequestDto();
-            Pageable pageable = PageRequest.of(request.getFrom(), request.getSize());
 
-            when(dealRepository.findAll(pageable))
-                    .thenReturn(Page.empty());
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
+            when(dealRepository.findAllByUserId(regularUser.getId()))
+                    .thenReturn(List.of());
 
             List<DealDto> result = dealService.findAllDeals(request);
 
@@ -174,37 +188,81 @@ public class DealServiceTest {
             assertThrows(IllegalArgumentException.class,
                     () -> dealService.findAllDeals(invalidRequest));
         }
+
+        @Test
+        void findAllDeals_PaginationWorksCorrectly() {
+            RequestDto request = new RequestDto(1, 1);
+            Pageable pageable = PageRequest.of(request.getFrom(), request.getSize());
+            Page<Deal> page = new PageImpl<>(List.of(allDeals.get(1)));
+
+            when(securityUtils.getCurrentUser()).thenReturn(adminUser);
+            when(dealRepository.findAll(pageable)).thenReturn(page);
+            when(dealMapper.toDealDto(any(Deal.class))).thenAnswer(inv -> {
+                Deal d = inv.getArgument(0);
+                return DealDto.builder()
+                        .id(d.getId())
+                        .fromCurrencyCode(d.getFromCurrencyCode())
+                        .toCurrencyCode(d.getToCurrencyCode())
+                        .amountFrom(d.getAmountFrom())
+                        .amountTo(d.getAmountTo())
+                        .exchangeRate(d.getExchangeRate())
+                        .timestamp(d.getTimestamp())
+                        .build();
+            });
+
+            List<DealDto> result = dealService.findAllDeals(request);
+
+            assertThat(result).hasSize(1);
+            assertThat(result.getFirst().fromCurrencyCode()).isEqualTo("EUR");
+        }
     }
 
 
     @Nested
     class findDealBetweenDates {
         private List<Deal> deals;
-
+        private User regularUser;
+        private User adminUser;
+        private UUID userId;
+        private UUID adminId;
         @BeforeEach
         void setUp() {
+            userId = UUID.randomUUID();
+            adminId = UUID.randomUUID();
+
+            regularUser = User.builder()
+                    .id(userId)
+                    .roles(List.of(Role.builder().role("ROLE_USER").build()))
+                    .build();
+
+            adminUser = User.builder()
+                    .id(adminId)
+                    .roles(List.of(Role.builder().role("ROLE_ADMIN").build()))
+                    .build();
             deals = List.of(
                     Deal.builder()
+                            .user(regularUser)
                             .timestamp(LocalDateTime.of(2025, Month.APRIL, 10, 10, 10))
                             .build(),
 
                     Deal.builder()
+                            .user(adminUser)
                             .timestamp(LocalDateTime.of(2025, Month.AUGUST, 15, 10, 10))
                             .build()
             );
         }
 
         @Test
-        void findBetweenDates_shouldReturnEmptyList(){
+        void findBetweenDates_withUser_shouldReturnEmptyList(){
             LocalDate fromDate = LocalDate.of(2026, Month.JANUARY, 1);
             LocalDate toDate = LocalDate.of(2026, Month.DECEMBER, 31);
-
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
             assertThat(dealService.findDealsBetweenDates(new RequestDto(), fromDate, toDate))
                     .isEmpty();
         }
 
         @Test
-        void findBetweenDates_shouldReturnListOfOneElement() {
+        void findBetweenDates_withAdmin_shouldReturnListOfOneElement() {
             LocalDate fromDate = LocalDate.of(2025, Month.AUGUST, 10);
             LocalDate toDate = LocalDate.of(2025, Month.SEPTEMBER, 10);
 
@@ -222,6 +280,7 @@ public class DealServiceTest {
                         Deal d = inv.getArgument(0);
                         return DealDto.builder()
                                 .id(d.getId())
+                                .userId(d.getUser().getId())
                                 .fromCurrencyCode(d.getFromCurrencyCode())
                                 .toCurrencyCode(d.getToCurrencyCode())
                                 .amountFrom(d.getAmountFrom())
@@ -230,45 +289,120 @@ public class DealServiceTest {
                                 .timestamp(d.getTimestamp())
                                 .build();
                     });
+            when(securityUtils.getCurrentUser()).thenReturn(adminUser);
 
             List<DealDto> result = dealService.findDealsBetweenDates(new RequestDto(), fromDate, toDate);
 
             assertThat(result)
                     .hasSize(1)
                     .allMatch(dto ->
+                            dto.userId().equals(adminId) &&
                             dto.timestamp().isAfter(fromDate.atStartOfDay()) &&
                                     dto.timestamp().isBefore(toDate.plusDays(1).atStartOfDay())
                     );
         }
+
+        @Test
+        void findBetweenDates_withUser_shouldReturnListOfOneElement() {
+            LocalDate fromDate = LocalDate.of(2025, Month.APRIL, 10);
+            LocalDate toDate = LocalDate.of(2025, Month.SEPTEMBER, 10);
+
+            when(dealRepository.findDealsBetween(anyInt(), anyInt(), any(), any()))
+                    .thenAnswer(inv -> {
+                        LocalDate from = inv.getArgument(2);
+                        LocalDate to = inv.getArgument(3);
+                        return deals.stream()
+                                .filter(d -> !d.getTimestamp().toLocalDate().isBefore(from))
+                                .filter(d -> !d.getTimestamp().toLocalDate().isAfter(to))
+                                .toList();
+                    });
+            when(dealMapper.toDealDto(any(Deal.class)))
+                    .thenAnswer(inv -> {
+                        Deal d = inv.getArgument(0);
+                        return DealDto.builder()
+                                .id(d.getId())
+                                .userId(d.getUser().getId())
+                                .fromCurrencyCode(d.getFromCurrencyCode())
+                                .toCurrencyCode(d.getToCurrencyCode())
+                                .amountFrom(d.getAmountFrom())
+                                .amountTo(d.getAmountTo())
+                                .exchangeRate(d.getExchangeRate())
+                                .timestamp(d.getTimestamp())
+                                .build();
+                    });
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
+
+            List<DealDto> result = dealService.findDealsBetweenDates(new RequestDto(), fromDate, toDate);
+
+            assertThat(result)
+                    .hasSize(1)
+                    .allMatch(dto ->
+                            dto.userId().equals(userId) &&
+                                    dto.timestamp().isAfter(fromDate.atStartOfDay()) &&
+                                    dto.timestamp().isBefore(toDate.plusDays(1).atStartOfDay())
+                    );
+        }
+
     }
 
 
-
-    //findById
-
     @Nested
     class findDealById {
-        private UUID existingDealId;
+        private UUID existingDealIdForUser, existingDealIdForAdmin;
         private UUID nonExistingDealId;
-        private Deal testDeal;
-        private DealDto testDealDto;
+        private Deal testDealForUser,testDealForAdmin;
+        private DealDto testDealForUserDto,testDealForAdminDto;
+        private User regularUser;
+        private User adminUser;
+        private UUID userId;
+        private UUID adminId;
 
         @BeforeEach
         void setUp() {
-            existingDealId = UUID.randomUUID();
+            userId = UUID.randomUUID();
+            adminId = UUID.randomUUID();
+
+            regularUser = User.builder()
+                    .id(userId)
+                    .roles(List.of(Role.builder().role("ROLE_USER").build()))
+                    .build();
+
+            adminUser = User.builder()
+                    .id(adminId)
+                    .roles(List.of(Role.builder().role("ROLE_ADMIN").build()))
+                    .build();
+            existingDealIdForUser = UUID.randomUUID();
+            existingDealIdForAdmin = UUID.randomUUID();
             nonExistingDealId = UUID.randomUUID();
-            User user = User.builder().id(UUID.randomUUID()).build();
-            testDeal = Deal.builder()
-                    .id(existingDealId)
-                    .user(user)
+            testDealForUser = Deal.builder()
+                    .id(existingDealIdForUser)
+                    .user(regularUser)
+                    .fromCurrencyCode("USD")
+                    .toCurrencyCode("EUR")
+                    .amountFrom(BigDecimal.valueOf(100))
+                    .build();
+            testDealForAdmin = Deal.builder()
+                    .id(existingDealIdForAdmin)
+                    .user(adminUser)
                     .fromCurrencyCode("USD")
                     .toCurrencyCode("EUR")
                     .amountFrom(BigDecimal.valueOf(100))
                     .build();
 
-            testDealDto = DealDto.builder()
-                    .id(existingDealId)
-                    .userId(user.getId())
+            testDealForUserDto = DealDto.builder()
+                    .id(existingDealIdForUser)
+                    .userId(userId)
+                    .fromCurrencyCode("USD")
+                    .toCurrencyCode("EUR")
+                    .amountFrom(BigDecimal.valueOf(100))
+                    .amountTo(BigDecimal.valueOf(85))
+                    .exchangeRate(BigDecimal.valueOf(0.85))
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            testDealForAdminDto = DealDto.builder()
+                    .id(existingDealIdForAdmin)
+                    .userId(adminId)
                     .fromCurrencyCode("USD")
                     .toCurrencyCode("EUR")
                     .amountFrom(BigDecimal.valueOf(100))
@@ -280,31 +414,43 @@ public class DealServiceTest {
 
         @Test
         void findDealById_ExistingId_ReturnsDealDto() {
-            when(dealRepository.findById(existingDealId))
-                    .thenReturn(Optional.of(testDeal));
-            when(dealMapper.toDealDto(testDeal))
-                    .thenReturn(testDealDto);
+            when(dealRepository.findById(existingDealIdForUser))
+                    .thenReturn(Optional.of(testDealForUser));
+            when(dealMapper.toDealDto(testDealForUser)).thenReturn(testDealForUserDto);
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
 
-            DealDto result = dealService.findDealById(existingDealId);
+            DealDto result = dealService.findDealById(existingDealIdForUser);
 
             assertThat(result)
                     .isNotNull()
-                    .isEqualTo(testDealDto);
+                    .isEqualTo(testDealForUserDto);
 
-            verify(dealRepository).findById(existingDealId);
-            verify(dealMapper).toDealDto(testDeal);
+            verify(dealRepository).findById(existingDealIdForUser);
+            verify(dealMapper).toDealDto(testDealForUser);
         }
 
         @Test
-        void findDealById_NonExistingId_ReturnsNull() {
+        void findDealById_NonExistingId_ThrowsNotFoundException() {
             when(dealRepository.findById(nonExistingDealId))
                     .thenReturn(Optional.empty());
 
-            DealDto result = dealService.findDealById(nonExistingDealId);
-
-            assertThat(result).isNull();
+            assertThrows(NotFoundException.class,() -> dealService.findDealById(nonExistingDealId));
             verify(dealRepository).findById(nonExistingDealId);
             verify(dealMapper, never()).toDealDto(any());
+        }
+
+        @Test
+        void findDealById_withUser_ThrowsAccessDeniedException() {
+            UUID dealId = testDealForAdmin.getId();
+
+            when(dealRepository.findById(dealId))
+                    .thenReturn(Optional.of(testDealForAdmin));
+            when(dealMapper.toDealDto(testDealForAdmin)).thenReturn(testDealForAdminDto);
+            when(securityUtils.getCurrentUser()).thenReturn(regularUser);
+
+            assertThrows(AccessDeniedException.class, () -> dealService.findDealById(dealId));
+
+            verify(dealRepository).findById(dealId);
         }
 
     }
@@ -408,22 +554,6 @@ public class DealServiceTest {
             assertThrows(NotFoundException.class, () -> dealService.addDeal(inputDealDto));
         }
 
-        @Test
-        void addDeal_UserMismatch() {
-            DealDto dealDtoWithWrongUser = DealDto.builder()
-                    .id(UUID.randomUUID())
-                    .userId(UUID.randomUUID())
-                    .fromCurrencyCode("USD")
-                    .toCurrencyCode("EUR")
-                    .amountFrom(BigDecimal.valueOf(100))
-                    .build();
-            when(currencyServiceClient.getCurrencyByCode("USD")).thenReturn(Optional.of(usdCurrency));
-            when(currencyServiceClient.getCurrencyByCode("EUR")).thenReturn(Optional.of(eurCurrency));
-            when(currencyServiceClient.getExchangeRate(any(UUID.class), any(UUID.class), any(LocalDate.class))).thenReturn(Optional.of(exchangeRate));
-            when(securityUtils.getCurrentUser()).thenReturn(user);
-
-            assertThrows(AuthenticationMismatchException.class, () -> dealService.addDeal(dealDtoWithWrongUser));
-        }
     }
 
 
