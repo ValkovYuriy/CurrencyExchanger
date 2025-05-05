@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuriy.dev.cashbalanceservice.dto.CashBalanceDto;
 import yuriy.dev.cashbalanceservice.dto.DealDto;
+import yuriy.dev.cashbalanceservice.exception.NegativeBalanceException;
+import yuriy.dev.cashbalanceservice.exception.NotFoundException;
 import yuriy.dev.cashbalanceservice.mapper.CashBalanceMapper;
 import yuriy.dev.cashbalanceservice.model.CashBalance;
 import yuriy.dev.cashbalanceservice.model.Currency;
@@ -33,17 +35,17 @@ public class CashBalanceService {
 
     private Currency getCurrencyOrThrow(String currencyCode) {
         return currencyRepository.findByCode(currencyCode)
-                .orElseThrow(() -> new RuntimeException("Валюта не найдена: " + currencyCode));
+                .orElseThrow(() -> new NotFoundException("Валюта не найдена: " + currencyCode));
     }
 
     protected void updateCurrencyBalance(Currency currency, BigDecimal amount, boolean isSourceCurrency) {
         CashBalance cashBalance = cashBalanceRepository.findCashBalanceByCurrencyId(currency.getId())
                 .orElseThrow(() ->
-                        new RuntimeException("Баланс не найден для валюты: " + currency.getCode())
+                        new NotFoundException("Баланс не найден для валюты: " + currency.getCode())
                 );
         cashBalance.setAmount(isSourceCurrency ? cashBalance.getAmount().add(amount) : cashBalance.getAmount().subtract(amount));
         if(!isSourceCurrency && cashBalance.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Баланс не может быть отрицательным");
+            throw new NegativeBalanceException("Баланс не может быть отрицательным");
         }
         updateCashBalance(cashBalance.getId(), cashBalanceMapper.toCashBalanceDto(cashBalance));
         log.info("Обновлен баланс для валюты {} ", currency.getCode());

@@ -34,7 +34,6 @@ public class KafkaService {
     public void updateDailyReport(ConsumerRecord<String, ExchangeRateDto> record) {
         log.info("Получена запись: {}", record);
         ExchangeRateDto exchangeRateDetails = record.value();
-        log.info(exchangeRateDetails.toString());
         try {
             dailyReportService.processDailyReportUpdate(exchangeRateDetails);
         } catch (Exception e) {
